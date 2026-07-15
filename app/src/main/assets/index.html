@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>WordFlow</title>
+<meta name="theme-color" content="#0d1117">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WordFlow">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ══════════════════════════ TOKENS ══════════════════════════ */
+:root {
+  --bg:       #0d1117;
+  --surface:  #161b22;
+  --surface2: #21262d;
+  --surface3: #2d333b;
+  --border:   #30363d;
+  --border2:  #444c56;
+  --blue:     #4493f8;
+  --green:    #3fb950;
+  --red:      #f85149;
+  --yellow:   #d29922;
+  --purple:   #bc8cff;
+  --teal:     #39d353;
+  --text:     #e6edf3;
+  --text2:    #8b949e;
+  --text3:    #6e7681;
+  --r-sm:     8px;
+  --r-md:     12px;
+  --r-lg:     16px;
+}
+/* ══════════════════════════ RESET ══════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{height:100%;overflow:hidden;}
+body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:'SF Pro Text','Segoe UI',system-ui,-apple-system,sans-serif;
+  font-size:15px;line-height:1.5;}
+button,select,input{font-family:inherit;font-size:inherit;}
+input[type="checkbox"],input[type="radio"]{accent-color:var(--blue);}
+/* ══════════════════════════ LAYOUT ══════════════════════════ */
+#root{display:flex;flex-direction:column;height:100%;max-width:600px;margin:0 auto;}
+/* ══════════════════════════ BOTTOM NAV ══════════════════════════ */
+#bottomNav{
+  display:flex;background:var(--surface);border-top:1px solid var(--border);
+  flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0);z-index:50;
+}
+.bnav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:10px 4px;border:none;background:transparent;color:var(--text2);
+  cursor:pointer;font-size:9px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;
+  transition:color .15s;position:relative;
+}
+.bnav-btn .ico{font-size:20px;line-height:1;}
+.bnav-btn.active{color:var(--blue);}
+.bnav-btn.active::after{
+  content:'';position:absolute;top:0;left:20%;right:20%;height:2px;
+  background:var(--blue);border-radius:0 0 2px 2px;
+}
+/* ══════════════════════════ PANELS ══════════════════════════ */
+#panels{flex:1;overflow:hidden;position:relative;}
+.panel{
+  position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;
+  padding:16px 16px 24px;display:none;
+  -webkit-overflow-scrolling:touch;
+}
+.panel.active{display:block;}
+/* ══════════════════════════ TYPOGRAPHY ══════════════════════════ */
+.page-title{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:16px;color:var(--text);}
+.section-label{
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;
+  color:var(--text3);margin-bottom:8px;margin-top:20px;
+}
+.section-label:first-child{margin-top:0;}
+/* ══════════════════════════ CARDS ══════════════════════════ */
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:16px;margin-bottom:12px;
+}
+.card-compact{padding:12px 14px;}
+/* ══════════════════════════ BUTTONS ══════════════════════════ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:9px 18px;border-radius:var(--r-sm);border:1px solid transparent;
+  font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s;
+  white-space:nowrap;user-select:none;
+}
+.btn:active{transform:scale(.97);}
+.btn:disabled{opacity:.4;pointer-events:none;}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+.btn-primary:hover{opacity:.88;}
+.btn-green{background:var(--green);color:#fff;border-color:var(--green);}
+.btn-danger{background:rgba(248,81,73,.15);color:var(--red);border-color:rgba(248,81,73,.3);}
+.btn-ghost{background:var(--surface2);color:var(--text);border-color:var(--border);}
+.btn-ghost:hover{border-color:var(--border2);}
+.btn-sm{padding:6px 12px;font-size:13px;border-radius:6px;}
+.btn-lg{padding:14px 24px;font-size:16px;border-radius:var(--r-md);}
+.btn-block{width:100%;}
+/* ══════════════════════════ INPUTS ══════════════════════════ */
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;}
+.input{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--r-sm);color:var(--text);padding:10px 13px;outline:none;
+  transition:border-color .15s;font-size:15px;
+  -webkit-appearance:none;
+}
+.input:focus{border-color:var(--blue);}
+select.input{cursor:pointer;}
+.input-row{display:flex;gap:8px;align-items:flex-end;}
+.input-row .field{flex:1;margin-bottom:0;}
+/* ══════════════════════════ TOGGLE ══════════════════════════ */
+.toggle{position:relative;width:44px;height:26px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{
+  position:absolute;inset:0;background:var(--surface3);border-radius:13px;
+  cursor:pointer;transition:background .2s;border:1px solid var(--border);
+}
+.toggle input:checked + .toggle-track{background:var(--blue);border-color:var(--blue);}
+.toggle-track::after{
+  content:'';position:absolute;width:20px;height:20px;
+  background:#fff;border-radius:50%;top:2px;left:2px;
+  transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.4);
+}
+.toggle input:checked + .toggle-track::after{transform:translateX(18px);}
+/* ══════════════════════════ CHOICE CHIPS (mode select) ══════════════════════════ */
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px;}
+.chip{
+  padding:7px 14px;border-radius:20px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text2);font-size:13px;font-weight:600;
+  cursor:pointer;transition:.15s;
+}
+.chip.selected{background:rgba(68,147,248,.15);border-color:var(--blue);color:var(--blue);}
+.chip:hover:not(.selected){border-color:var(--border2);color:var(--text);}
+/* ══════════════════════════ COURSE LIST ══════════════════════════ */
+.course-row{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);
+  margin-bottom:8px;
+}
+.course-icon{
+  width:40px;height:40px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,#4493f8,#bc8cff);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+}
+.course-meta{flex:1;min-width:0;}
+.course-name{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.course-sub{font-size:12px;color:var(--text2);margin-top:1px;}
+.course-actions{display:flex;gap:6px;}
+/* ══════════════════════════ UPLOAD ZONE ══════════════════════════ */
+.upload-zone{
+  border:2px dashed var(--border2);border-radius:var(--r-md);padding:28px 20px;
+  text-align:center;cursor:pointer;position:relative;transition:.2s;background:var(--surface2);
+}
+.upload-zone:hover{border-color:var(--blue);background:rgba(68,147,248,.04);}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-zone .uz-icon{font-size:32px;margin-bottom:8px;}
+.upload-zone p{font-size:13px;color:var(--text2);margin-top:4px;}
+/* ══════════════════════════ PROGRESS BAR ══════════════════════════ */
+.pbar-wrap{flex:1;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;}
+.pbar-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px;transition:width .4s;}
+/* ══════════════════════════ STATS ROW ══════════════════════════ */
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.stat-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 8px;text-align:center;}
+.stat-num{font-size:28px;font-weight:800;letter-spacing:-1px;}
+.stat-lbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
+.c-green .stat-num{color:var(--green);}
+.c-red .stat-num{color:var(--red);}
+.c-blue .stat-num{color:var(--blue);}
+/* ══════════════════════════ RESULT BADGE ══════════════════════════ */
+.result-badge{
+  display:inline-flex;align-items:center;gap:6px;padding:7px 18px;
+  border-radius:100px;font-size:14px;font-weight:700;
+  opacity:0;transform:translateY(6px);transition:.25s;
+}
+.result-badge.show{opacity:1;transform:translateY(0);}
+.result-badge.ok{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3);}
+.result-badge.no{background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3);}
+/* ══════════════════════════ CHECKBOX ITEM ══════════════════════════ */
+.cb-item{
+  display:flex;align-items:center;gap:10px;padding:10px 13px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);
+  cursor:pointer;margin-bottom:6px;transition:.15s;
+}
+.cb-item:hover{border-color:var(--border2);}
+.cb-item input{width:18px;height:18px;flex-shrink:0;}
+/* ══════════════════════════ MODAL ══════════════════════════ */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;
+  display:none;align-items:flex-start;justify-content:center;
+  padding:16px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.modal-backdrop.open{display:flex;}
+.modal{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:22px;width:100%;max-width:520px;margin:auto;
+}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.modal-title{font-size:17px;font-weight:700;}
+/* ══════════════════════════ WORD LIST ══════════════════════════ */
+.word-row{
+  display:flex;align-items:center;gap:8px;padding:8px 12px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:6px;
+}
+.word-en{flex:1;font-weight:600;font-size:14px;}
+.word-tr{flex:1;font-size:14px;color:var(--purple);}
+/* ══════════════════════════ EXERCISE CARD ══════════════════════════ */
+.ex-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  padding:32px 24px;text-align:center;margin-bottom:16px;position:relative;overflow:hidden;
+}
+.ex-card::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 50% -20%, rgba(68,147,248,.08) 0%, transparent 65%);
+}
+.ex-en{
+  font-size:48px;font-weight:800;letter-spacing:-2px;line-height:1.05;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:6px;word-break:break-word;
+}
+.ex-phonetic{font-size:16px;color:var(--text2);font-style:italic;margin-bottom:16px;min-height:24px;}
+.ex-speak{
+  border:2px solid var(--teal);background:rgba(57,211,83,.08);color:var(--teal);
+  border-radius:40px;padding:9px 22px;font-size:14px;font-weight:700;
+  cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px;margin-bottom:18px;
+}
+.ex-speak:active{transform:scale(.96);}
+.ex-divider{height:1px;background:var(--border);margin:16px 0;}
+.ex-tr-lbl{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:8px;}
+.ex-tr{font-size:32px;font-weight:700;color:var(--purple);word-break:break-word;}
+.ex-nav{display:flex;align-items:center;justify-content:center;gap:24px;margin-top:20px;}
+.ex-nav-btn{
+  width:48px;height:48px;border-radius:50%;border:2px solid var(--border);
+  background:var(--surface2);color:var(--text);font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:.15s;
+}
+.ex-nav-btn:not(:disabled):hover{border-color:var(--blue);color:var(--blue);}
+.ex-nav-btn:disabled{opacity:.3;pointer-events:none;}
+.ex-counter{font-size:15px;font-weight:700;color:var(--text2);min-width:70px;text-align:center;}
+.ex-auto-row{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+.ex-auto-lbl{font-size:13px;color:var(--text2);}
+/* ══════════════════════════ QUIZ QUESTION ══════════════════════════ */
+.quiz-hdr{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+.quiz-progress-txt{font-size:12px;color:var(--text2);white-space:nowrap;}
+.q-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  padding:32px 20px 24px;text-align:center;margin-bottom:12px;position:relative;overflow:hidden;
+}
+.q-card::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 50% -20%, rgba(188,140,255,.07) 0%, transparent 65%);
+}
+.q-lbl{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:8px;}
+.q-word{
+  font-size:44px;font-weight:800;letter-spacing:-2px;line-height:1.05;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:4px;word-break:break-word;
+}
+.q-speak-btn{background:none;border:none;font-size:26px;cursor:pointer;opacity:.7;transition:opacity .15s;padding:4px;}
+.q-speak-btn:hover{opacity:1;}
+.q-lang{font-size:12px;color:var(--text2);margin-bottom:20px;}
+.q-input-row{display:flex;gap:8px;margin:0 auto 12px;max-width:360px;width:100%;}
+.q-input-row .input{flex:1;text-align:center;font-size:16px;padding:11px 14px;}
+.mic-wrap{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px;}
+.mic-btn{
+  width:72px;height:72px;border-radius:50%;border:3px solid var(--blue);
+  background:rgba(68,147,248,.1);color:var(--blue);font-size:28px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;
+}
+.mic-btn:hover{background:rgba(68,147,248,.2);}
+.mic-btn.listening{
+  border-color:var(--red);background:rgba(248,81,73,.12);color:var(--red);
+  animation:mic-pulse 1s ease infinite;
+}
+@keyframes mic-pulse{0%,100%{box-shadow:0 0 0 0 rgba(248,81,73,.35);}50%{box-shadow:0 0 0 14px rgba(248,81,73,0);}}
+.mic-hint{font-size:11px;color:var(--text3);}
+.transcript{font-size:16px;font-weight:600;color:var(--text2);font-style:italic;min-height:24px;}
+.answer-reveal{font-size:19px;font-weight:700;color:var(--yellow);margin-top:6px;opacity:0;transition:opacity .3s;}
+.answer-reveal.show{opacity:1;}
+.quiz-actions{display:flex;gap:8px;justify-content:center;margin-top:12px;}
+.toggle-txt-btn{
+  background:none;border:1px solid var(--border);border-radius:6px;
+  color:var(--text3);font-size:11px;padding:4px 12px;cursor:pointer;transition:.15s;
+}
+.toggle-txt-btn:hover{border-color:var(--border2);color:var(--text2);}
+/* ══════════════════════════ CHOICE ══════════════════════════ */
+.choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0;}
+.choice-opt{
+  padding:16px 12px;border-radius:var(--r-md);border:2px solid var(--border);
+  background:var(--surface2);color:var(--text);font-size:14px;font-weight:600;
+  cursor:pointer;transition:.15s;text-align:center;line-height:1.3;
+}
+.choice-opt:hover:not(:disabled){border-color:var(--blue);background:rgba(68,147,248,.08);}
+.choice-opt.correct{border-color:var(--green);background:rgba(63,185,80,.1);color:var(--green);}
+.choice-opt.wrong{border-color:var(--red);background:rgba(248,81,73,.1);color:var(--red);}
+.choice-opt:disabled{cursor:default;}
+/* ══════════════════════════ MATCH ══════════════════════════ */
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;}
+.match-card{
+  padding:14px 10px;border-radius:var(--r-md);border:2px solid var(--border);
+  background:var(--surface2);color:var(--text);font-size:14px;font-weight:600;
+  cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;
+  min-height:58px;line-height:1.3;transition:all .15s;user-select:none;word-break:break-word;
+}
+.match-card.en-card{border-left-color:var(--blue);}
+.match-card.tr-card{border-left-color:var(--purple);}
+.match-card.selected{border-color:var(--blue);background:rgba(68,147,248,.12);transform:scale(1.02);}
+.match-card.matched{border-color:var(--green)!important;background:rgba(63,185,80,.08);color:var(--green);pointer-events:none;}
+.match-card.flash-wrong{border-color:var(--red)!important;background:rgba(248,81,73,.1);}
+.match-badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;}
+.match-badge{padding:5px 14px;border-radius:100px;font-size:12px;font-weight:700;}
+.mb-blue{background:rgba(68,147,248,.12);color:var(--blue);border:1px solid rgba(68,147,248,.25);}
+.mb-red{background:rgba(248,81,73,.12);color:var(--red);border:1px solid rgba(248,81,73,.25);}
+.mb-yellow{background:rgba(210,153,34,.12);color:var(--yellow);border:1px solid rgba(210,153,34,.25);}
+/* ══════════════════════════ RESULTS ══════════════════════════ */
+.result-screen{text-align:center;padding:32px 16px;}
+.result-emoji{font-size:52px;margin-bottom:12px;}
+.result-title{font-size:24px;font-weight:800;margin-bottom:4px;}
+.result-sub{font-size:14px;color:var(--text2);margin-bottom:20px;}
+.results-list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;margin:16px 0;text-align:left;}
+.ritem{display:flex;justify-content:space-between;align-items:center;padding:9px 13px;border-radius:var(--r-sm);font-size:13px;}
+.ritem.ok{background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.15);}
+.ritem.no{background:rgba(248,81,73,.06);border:1px solid rgba(248,81,73,.15);}
+/* ══════════════════════════ SETTINGS ══════════════════════════ */
+.settings-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 0;border-bottom:1px solid var(--border);
+}
+.settings-row:last-child{border-bottom:none;}
+.settings-row-label{font-size:14px;font-weight:600;}
+.settings-row-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+/* ══════════════════════════ TOAST ══════════════════════════ */
+#toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
+  padding:10px 20px;border-radius:100px;font-size:13px;font-weight:600;
+  white-space:nowrap;max-width:90vw;text-align:center;
+  opacity:0;transition:.25s;z-index:300;pointer-events:none;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.success{background:rgba(63,185,80,.2);color:var(--green);border:1px solid rgba(63,185,80,.35);}
+#toast.error{background:rgba(248,81,73,.2);color:var(--red);border:1px solid rgba(248,81,73,.35);}
+#toast.info{background:rgba(68,147,248,.2);color:var(--blue);border:1px solid rgba(68,147,248,.35);}
+/* ══════════════════════════ OVERLAY ══════════════════════════ */
+#overlay{
+  position:fixed;inset:0;background:rgba(13,17,23,.92);z-index:400;
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+}
+#overlay.show{display:flex;}
+.spinner{
+  width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--blue);
+  border-radius:50%;animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.overlay-txt{font-size:14px;color:var(--text2);}
+/* ══════════════════════════ MISC ══════════════════════════ */
+.empty{text-align:center;padding:32px 16px;color:var(--text3);}
+.empty .e-ico{font-size:36px;margin-bottom:8px;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.gap-8{display:flex;gap:8px;flex-wrap:wrap;}
+.mt-8{margin-top:8px;}
+.mt-12{margin-top:12px;}
+.mb-0{margin-bottom:0!important;}
+.info-box{
+  background:rgba(68,147,248,.07);border:1px solid rgba(68,147,248,.2);
+  border-radius:var(--r-sm);padding:12px 14px;font-size:13px;color:var(--text2);margin-bottom:12px;
+}
+.info-box b{color:var(--blue);}
+/* ── retry-wrong button ── */
+.btn-retry-wrong{background:rgba(248,81,73,.12);color:var(--red);border:1px solid rgba(248,81,73,.3);}
+</style>
+</head>
+<body>
+<div id="root">
+  <!-- ══════════ PANELS ══════════ -->
+  <div id="panels">
+
+    <!-- ── KURSLAR ── -->
+    <div id="panel-courses" class="panel active">
+      <div class="page-title">📚 Kurslar</div>
+      <div class="info-box"><b>İnternet gerekmez.</b> Excel'den İngilizce/Türkçe sütun seçin veya elle kelime girin.</div>
+
+      <div class="section-label">Yeni Kurs Oluştur</div>
+      <div class="card card-compact">
+        <div class="input-row">
+          <div class="field"><label>Kurs Adı</label><input class="input" id="newCourseName" placeholder="ör. Unit 1, 9-A..."></div>
+          <button class="btn btn-primary" id="createCourseBtn" style="margin-bottom:0;height:42px;">Oluştur</button>
+        </div>
+      </div>
+
+      <div class="section-label">Excel'den Yükle</div>
+      <div class="card card-compact">
+        <div class="field mb-0">
+          <label>Hedef Kurs</label>
+          <select class="input" id="uploadTargetCourse"><option value="">-- Kurs seçin --</option></select>
+        </div>
+        <div class="upload-zone mt-12" id="uploadZone">
+          <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+          <div class="uz-icon">📊</div>
+          <div style="font-weight:600;">Excel Dosyası Seç</div>
+          <p>.xlsx / .xls / .csv — 2 sütun (İngilizce + Türkçe)</p>
+        </div>
+      </div>
+
+      <div class="section-label">Manuel Kelime Ekle</div>
+      <div class="card card-compact">
+        <div class="field"><label>Kurs</label><select class="input" id="manualTargetCourse"><option value="">-- Kurs seçin --</option></select></div>
+        <div class="input-row mb-0">
+          <div class="field"><label>🇬🇧 İngilizce</label><input class="input" id="manualEN" placeholder="apple"></div>
+          <div class="field"><label>🇹🇷 Türkçe</label><input class="input" id="manualTR" placeholder="elma"></div>
+          <button class="btn btn-primary btn-sm" id="addWordBtn" style="height:42px;">+</button>
+        </div>
+      </div>
+
+      <div class="section-label">Kurslarım</div>
+      <div id="courseList"></div>
+    </div>
+
+    <!-- ── EGZERSİZ ── -->
+    <div id="panel-exercise" class="panel">
+      <div id="exSetup">
+        <div class="page-title">📖 Egzersiz</div>
+        <div class="section-label">Kurs Seç</div>
+        <div id="exCourseList"></div>
+        <div class="section-label">Sıralama</div>
+        <div class="chip-row">
+          <button class="chip selected" id="exOrderRandom" data-group="exOrder">🔀 Karışık</button>
+          <button class="chip" id="exOrderSeq" data-group="exOrder">📋 Sıralı</button>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block mt-12" id="startExBtn">📖 Egzersizi Başlat</button>
+      </div>
+      <div id="exActive" style="display:none;">
+        <div class="quiz-hdr">
+          <span class="quiz-progress-txt" id="exProgress">1/10</span>
+          <div class="pbar-wrap"><div class="pbar-fill" id="exProgressFill" style="width:10%"></div></div>
+          <button class="btn btn-ghost btn-sm" id="stopExBtn">✕</button>
+        </div>
+        <div class="ex-card">
+          <div class="q-lbl">İNGİLİZCE</div>
+          <div class="ex-en" id="exEnWord">—</div>
+          <div class="ex-phonetic" id="exPhonetic"></div>
+          <button class="ex-speak" id="exSpeakBtn">🔊 Dinle</button>
+          <div class="ex-divider"></div>
+          <div class="ex-tr-lbl">TÜRKÇE KARŞILIĞI</div>
+          <div class="ex-tr" id="exTrWord">—</div>
+          <div class="ex-nav">
+            <button class="ex-nav-btn" id="exPrevBtn">◀</button>
+            <span class="ex-counter" id="exCounter">1/1</span>
+            <button class="ex-nav-btn" id="exNextBtn">▶</button>
+          </div>
+          <div class="ex-auto-row">
+            <span class="ex-auto-lbl">Otomatik</span>
+            <label class="toggle"><input type="checkbox" id="exAutoPlay"><span class="toggle-track"></span></label>
+            <select class="input" id="exAutoSpeed" style="width:auto;padding:5px 10px;font-size:12px;">
+              <option value="3000">3 sn</option>
+              <option value="5000" selected>5 sn</option>
+              <option value="8000">8 sn</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ÇOKTAN SEÇMELİ ── -->
+    <div id="panel-choice" class="panel">
+      <div id="choiceSetup">
+        <div class="page-title">🎯 Çoktan Seçmeli</div>
+        <div class="section-label">Kurs Seç</div>
+        <div id="choiceCourseList"></div>
+        <div class="section-label">Yön</div>
+        <div class="chip-row">
+          <button class="chip selected" id="choiceModeEN" data-group="choiceMode">🇬🇧 → 🇹🇷</button>
+          <button class="chip" id="choiceModeTR" data-group="choiceMode">🇹🇷 → 🇬🇧</button>
+        </div>
+        <div class="section-label">Soru Sayısı</div>
+        <div class="chip-row">
+          <button class="chip selected" data-group="choiceCount" data-count="10">10</button>
+          <button class="chip" data-group="choiceCount" data-count="20">20</button>
+          <button class="chip" data-group="choiceCount" data-count="50">50</button>
+          <button class="chip" data-group="choiceCount" data-count="0">Tümü</button>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block mt-12" id="startChoiceBtn">🎯 Testi Başlat</button>
+      </div>
+      <div id="choiceActive" style="display:none;">
+        <div class="quiz-hdr">
+          <span class="quiz-progress-txt" id="choiceProgress">1/10</span>
+          <div class="pbar-wrap"><div class="pbar-fill" id="choiceProgressFill" style="width:10%"></div></div>
+          <button class="btn btn-ghost btn-sm" id="stopChoiceBtn">✕</button>
+        </div>
+        <div class="q-card">
+          <div class="q-lbl" id="choiceQLabel">İNGİLİZCE</div>
+          <div class="q-word" id="choiceQWord">—</div>
+          <button class="q-speak-btn" id="choiceSpeakBtn">🔊</button>
+          <div class="choice-grid" id="choiceOptions"></div>
+          <div style="min-height:52px;display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div class="result-badge" id="choiceResultBadge"></div>
+            <div class="answer-reveal" id="choiceAnswerReveal"></div>
+          </div>
+          <div class="quiz-actions">
+            <button class="btn btn-ghost" id="choiceSkipBtn">⏭ Atla</button>
+            <button class="btn btn-primary" id="choiceNextBtn" style="display:none;">Sonraki →</button>
+          </div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-box c-green"><div class="stat-num" id="choiceStatOk">0</div><div class="stat-lbl">Doğru</div></div>
+          <div class="stat-box c-red"><div class="stat-num" id="choiceStatNo">0</div><div class="stat-lbl">Yanlış</div></div>
+          <div class="stat-box c-blue"><div class="stat-num" id="choiceStatPct">—</div><div class="stat-lbl">Başarı</div></div>
+        </div>
+      </div>
+      <div id="choiceResults" style="display:none;">
+        <div class="result-screen">
+          <div class="result-emoji" id="choiceResultEmoji">🎉</div>
+          <div class="result-title">Test Bitti!</div>
+          <div class="result-sub" id="choiceResultSub"></div>
+          <div class="stats-row">
+            <div class="stat-box c-green"><div class="stat-num" id="choiceFinalOk">0</div><div class="stat-lbl">Doğru</div></div>
+            <div class="stat-box c-red"><div class="stat-num" id="choiceFinalNo">0</div><div class="stat-lbl">Yanlış</div></div>
+            <div class="stat-box c-blue"><div class="stat-num" id="choiceFinalPct">0%</div><div class="stat-lbl">Başarı</div></div>
+          </div>
+          <div class="results-list" id="choiceResultsList"></div>
+          <div class="gap-8" style="justify-content:center;">
+            <button class="btn btn-primary" id="choiceRetryBtn">🔄 Tekrar</button>
+            <button class="btn btn-retry-wrong" id="choiceRetryWrong">✗ Yanlışları Tekrarla</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EŞLEŞTİRME ── -->
+    <div id="panel-match" class="panel">
+      <div id="matchSetup">
+        <div class="page-title">🃏 Eşleştirme</div>
+        <div class="section-label">Kurs</div>
+        <select class="input" id="matchCourseSelect"><option value="">-- Kurs seçin --</option></select>
+        <div class="section-label">Kart Çifti</div>
+        <div class="chip-row" id="matchSizeChips">
+          <button class="chip" data-size="4">4 Çift</button>
+          <button class="chip selected" data-size="6">6 Çift</button>
+          <button class="chip" data-size="8">8 Çift</button>
+          <button class="chip" data-size="10">10 Çift</button>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block mt-12" id="startMatchBtn">🃏 Oyunu Başlat</button>
+      </div>
+      <div id="matchActive" style="display:none;">
+        <div class="quiz-hdr">
+          <span style="font-size:14px;font-weight:700;">🃏 Eşleştir</span>
+          <div style="flex:1;"></div>
+          <button class="btn btn-ghost btn-sm" id="stopMatchBtn">✕</button>
+        </div>
+        <div class="match-badges">
+          <span class="match-badge mb-blue">✅ <span id="matchPairs">0</span> çift</span>
+          <span class="match-badge mb-red">❌ <span id="matchErrors">0</span> hata</span>
+          <span class="match-badge mb-yellow">⏱ <span id="matchTimer">0:00</span></span>
+        </div>
+        <div style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:10px;">
+          mavi kenar = İngilizce &nbsp;|&nbsp; mor kenar = Türkçe
+        </div>
+        <div class="match-grid" id="matchGrid"></div>
+      </div>
+      <div id="matchResults" style="display:none;">
+        <div class="result-screen">
+          <div class="result-emoji">🎉</div>
+          <div class="result-title">Tebrikler!</div>
+          <div class="result-sub" id="matchResultSub"></div>
+          <div class="stats-row">
+            <div class="stat-box c-green"><div class="stat-num" id="matchFinalPairs">0</div><div class="stat-lbl">Çift</div></div>
+            <div class="stat-box c-red"><div class="stat-num" id="matchFinalErrors">0</div><div class="stat-lbl">Hata</div></div>
+            <div class="stat-box c-blue"><div class="stat-num" id="matchFinalTime">—</div><div class="stat-lbl">Süre</div></div>
+          </div>
+          <button class="btn btn-primary btn-lg btn-block mt-12" id="matchRetryBtn">🔄 Tekrar Oyna</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SESLI QUIZ ── -->
+    <div id="panel-quiz" class="panel">
+      <div id="quizSetup">
+        <div class="page-title">🎤 Sesli Quiz</div>
+        <div class="section-label">Soru Yönü</div>
+        <div class="chip-row">
+          <button class="chip selected" id="qModeEN" data-group="qMode">🇬🇧 → 🇹🇷 (Türkçe cevap)</button>
+          <button class="chip" id="qModeTR" data-group="qMode">🇹🇷 → 🇬🇧 (İngilizce cevap)</button>
+        </div>
+        <div class="section-label">Kurs Seç</div>
+        <div class="gap-8 mb-0 mt-8" style="margin-bottom:8px;">
+          <button class="btn btn-ghost btn-sm" id="quizSelAll">Tümü</button>
+          <button class="btn btn-ghost btn-sm" id="quizClearAll">Temizle</button>
+        </div>
+        <div id="quizCourseList"></div>
+        <div class="section-label">Sıralama</div>
+        <div class="chip-row">
+          <button class="chip selected" id="qOrderRandom" data-group="qOrder">🔀 Karışık</button>
+          <button class="chip" id="qOrderSeq" data-group="qOrder">📋 Sıralı</button>
+        </div>
+        <div class="section-label">Cevap Yöntemi</div>
+        <div class="chip-row">
+          <button class="chip selected" id="qAnsVoiceText" data-group="qAns">⌨️ + 🎤 Her İkisi</button>
+          <button class="chip" id="qAnsVoice" data-group="qAns">🎤 Yalnızca Sesli</button>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block mt-12" id="startQuizBtn">🎯 Quiz Başlat</button>
+      </div>
+      <div id="quizActive" style="display:none;">
+        <div class="quiz-hdr">
+          <span class="quiz-progress-txt" id="quizProgressTxt">1/10</span>
+          <div class="pbar-wrap"><div class="pbar-fill" id="quizProgressFill" style="width:10%"></div></div>
+          <button class="btn btn-ghost btn-sm" id="stopQuizBtn">✕</button>
+        </div>
+        <div class="q-card">
+          <div class="q-lbl" id="quizQLbl">İNGİLİZCE KELİME</div>
+          <div class="q-word" id="quizQWord">—</div>
+          <button class="q-speak-btn" id="quizSpeakBtn">🔊</button>
+          <div class="q-lang" id="quizQLang">Türkçesini söyleyin</div>
+          <div id="quizTextWrap" style="display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;">
+            <div class="q-input-row">
+              <input class="input" id="quizTextInput" placeholder="Cevabınızı yazın...">
+              <button class="btn btn-primary" id="quizSubmitBtn" style="padding:11px 16px;">✓</button>
+            </div>
+            <button class="toggle-txt-btn" id="quizToggleTxtBtn">⌨️ Yazılı cevabı kapat</button>
+          </div>
+          <div class="mic-wrap" style="margin-top:10px;">
+            <div class="mic-btn" id="micBtn">🎤</div>
+            <span class="mic-hint" id="micHint">sesli cevap ver</span>
+          </div>
+          <div style="min-height:70px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:4px;">
+            <div class="transcript" id="quizTranscript"></div>
+            <div class="result-badge" id="quizResultBadge"></div>
+            <div class="answer-reveal" id="quizAnswerReveal"></div>
+          </div>
+          <div class="quiz-actions">
+            <button class="btn btn-ghost" id="quizSkipBtn">⏭ Atla</button>
+            <button class="btn btn-primary" id="quizNextBtn" style="display:none;">Sonraki →</button>
+          </div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-box c-green"><div class="stat-num" id="quizStatOk">0</div><div class="stat-lbl">Doğru</div></div>
+          <div class="stat-box c-red"><div class="stat-num" id="quizStatNo">0</div><div class="stat-lbl">Yanlış</div></div>
+          <div class="stat-box c-blue"><div class="stat-num" id="quizStatPct">—</div><div class="stat-lbl">Başarı</div></div>
+        </div>
+      </div>
+      <div id="quizResults" style="display:none;">
+        <div class="result-screen">
+          <div class="result-emoji" id="quizResultEmoji">🎉</div>
+          <div class="result-title">Quiz Bitti!</div>
+          <div class="result-sub" id="quizResultSub"></div>
+          <div class="stats-row">
+            <div class="stat-box c-green"><div class="stat-num" id="quizFinalOk">0</div><div class="stat-lbl">Doğru</div></div>
+            <div class="stat-box c-red"><div class="stat-num" id="quizFinalNo">0</div><div class="stat-lbl">Yanlış</div></div>
+            <div class="stat-box c-blue"><div class="stat-num" id="quizFinalPct">0%</div><div class="stat-lbl">Başarı</div></div>
+          </div>
+          <div class="results-list" id="quizResultsList"></div>
+          <div class="gap-8" style="justify-content:center;">
+            <button class="btn btn-primary" id="quizRetryBtn">🔄 Tekrar</button>
+            <button class="btn btn-retry-wrong" id="quizRetryWrong">✗ Yanlışları Tekrarla</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── AYARLAR ── -->
+    <div id="panel-settings" class="panel">
+      <div class="page-title">⚙️ Ayarlar</div>
+      <div class="card">
+        <div class="settings-row">
+          <div><div class="settings-row-label">JSON Yedek Al</div><div class="settings-row-sub">Tüm kurs ve kelimeleri dışa aktar</div></div>
+          <button class="btn btn-green btn-sm" id="exportJsonBtn">⬇ İndir</button>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">JSON Geri Yükle</div><div class="settings-row-sub">Daha önce aldığınız yedeği yükleyin</div></div>
+          <button class="btn btn-ghost btn-sm" id="importJsonTrigger">⬆ Yükle</button>
+          <input type="file" id="importJsonFile" accept=".json" style="display:none;">
+        </div>
+        <div class="settings-row" style="border-bottom:none;">
+          <div><div class="settings-row-label" style="color:var(--red);">Tüm Verileri Sil</div><div class="settings-row-sub">Geri alınamaz</div></div>
+          <button class="btn btn-danger btn-sm" id="deleteAllBtn">🗑 Sil</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="settings-row" style="border-bottom:none;">
+          <div><div class="settings-row-label">Ses Tanıma Dili</div><div class="settings-row-sub">İngilizce sorulunca TR, Türkçe sorulunca EN</div></div>
+          <span style="font-size:11px;color:var(--green);font-weight:700;">Otomatik</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="settings-row" style="border-bottom:none;">
+          <div><div class="settings-row-label">PWA Kurulumu</div><div class="settings-row-sub">Tarayıcıda "Ana Ekrana Ekle" ile kurun</div></div>
+          <span style="font-size:18px;">📱</span>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:20px;font-size:12px;color:var(--text3);">WordFlow v3 — API Key gerekmez</div>
+    </div>
+  </div>
+
+  <!-- ══════════ BOTTOM NAV ══════════ -->
+  <nav id="bottomNav">
+    <button class="bnav-btn active" data-panel="courses"><span class="ico">📚</span>Kurslar</button>
+    <button class="bnav-btn" data-panel="exercise"><span class="ico">📖</span>Egzersiz</button>
+    <button class="bnav-btn" data-panel="choice"><span class="ico">🎯</span>Test</button>
+    <button class="bnav-btn" data-panel="match"><span class="ico">🃏</span>Eşleştir</button>
+    <button class="bnav-btn" data-panel="quiz"><span class="ico">🎤</span>Quiz</button>
+    <button class="bnav-btn" data-panel="settings"><span class="ico">⚙️</span>Ayarlar</button>
+  </nav>
+</div>
+
+<!-- ══════════ WORD MODAL ══════════ -->
+<div class="modal-backdrop" id="wordModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="wordModalTitle">Kelimeler</div>
+      <button class="btn btn-ghost btn-sm" id="closeWordModal">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px;" id="wordModalCount"></div>
+    <div class="input-row" style="margin-bottom:12px;">
+      <input class="input" id="wmEN" placeholder="🇬🇧 İngilizce" style="flex:1;">
+      <input class="input" id="wmTR" placeholder="🇹🇷 Türkçe" style="flex:1;">
+      <button class="btn btn-primary btn-sm" id="wmAddBtn" style="height:42px;">+</button>
+    </div>
+    <div id="wordModalList" style="max-height:380px;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- ══════════ COLUMN MODAL ══════════ -->
+<div class="modal-backdrop" id="colModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Sütunları Eşleştir</div>
+    </div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">Excel'inizde hangi sütun İngilizce, hangisi Türkçe?</p>
+    <div class="field">
+      <label style="color:var(--blue);">🇬🇧 İNGİLİZCE SÜTUN</label>
+      <div id="enColList"></div>
+    </div>
+    <div class="field">
+      <label style="color:var(--purple);">🇹🇷 TÜRKÇE SÜTUN</label>
+      <div id="trColList"></div>
+    </div>
+    <div class="gap-8" style="justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-ghost" id="cancelColModal">İptal</button>
+      <button class="btn btn-primary" id="confirmColModal">✓ Yükle</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ LOADING OVERLAY ══════════ -->
+<div id="overlay">
+  <div class="spinner"></div>
+  <div class="overlay-txt" id="overlayTxt">İşleniyor...</div>
+</div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+// ══════════════════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════════════════
+const DB_KEY = 'wordflow_v3';
+function loadDB(){ try{ return JSON.parse(localStorage.getItem(DB_KEY)||'null')||{courses:[],bestScores:{}}; }catch{ return {courses:[],bestScores:{}}; } }
+function saveDB(){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+let db = loadDB();
+if (!db.bestScores) db.bestScores = {};
+
+function genId(){ return 'c_'+Date.now()+Math.random().toString(36).slice(2,7); }
+function getCourseWords(id){ const c=db.courses.find(c=>c.id===id); return c?c.words:[]; }
+function getSelectedWords(ids){ let w=[]; ids.forEach(id=>{ w=w.concat(getCourseWords(id)); }); return w; }
+
+// ══════════════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════════════
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+let _toastTimer;
+function toast(msg, type='info'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast ${type}`;
+  clearTimeout(_toastTimer);
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ t.classList.add('show'); }); });
+  _toastTimer=setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+function showOverlay(txt='İşleniyor...'){ document.getElementById('overlayTxt').textContent=txt; document.getElementById('overlay').classList.add('show'); }
+function hideOverlay(){ document.getElementById('overlay').classList.remove('show'); }
+
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function normalize(s){
+  return (s||'').toLowerCase().trim()
+    .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s')
+    .replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
+    .replace(/[''`]/g,'').replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
+}
+
+function formatTime(s){ return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
+
+function speakWord(word, lang='en-US'){
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(word);
+  u.lang=lang; u.rate=0.85;
+  // Android WebView sometimes needs a small delay
+  setTimeout(()=>window.speechSynthesis.speak(u), 50);
+}
+
+// Chip group helper
+function initChipGroups(){
+  document.querySelectorAll('.chip[data-group]').forEach(chip=>{
+    chip.addEventListener('click',()=>{
+      const g=chip.dataset.group;
+      document.querySelectorAll(`.chip[data-group="${g}"]`).forEach(c=>c.classList.remove('selected'));
+      chip.classList.add('selected');
+    });
+  });
+}
+
+function makePhonetic(word){
+  const rules={
+    'tion':'şın','sion':'jın','ph':'f','ck':'k','ch':'ç','sh':'ş','th':'δ',
+    'wh':'w','ee':'i:','ea':'i:','oo':'u:','ou':'au','ow':'au','oi':'oy',
+    'igh':'ay','ght':'t','kn':'n','wr':'r','mb':'m','gn':'n',
+    'ng':'ng','qu':'kw','ai':'ey','ay':'ey','ie':'i:','ue':'u:','ew':'yu:','aw':'ô'
+  };
+  let r=word.toLowerCase();
+  for(const [k,v] of Object.entries(rules)) r=r.split(k).join(`{${v}}`);
+  r=r.replace(/\{([^}]+)\}/g,'[$1]');
+  return `/ ${r} /`;
+}
+
+// ══════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════
+const _panels={};
+document.querySelectorAll('.panel').forEach(p=>_panels[p.id.replace('panel-','')]=p);
+
+function navTo(name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.querySelector(`.bnav-btn[data-panel="${name}"]`).classList.add('active');
+  // refresh lists on panel switch
+  if(name==='exercise') renderCheckboxList('exCourseList','ex-course-cb');
+  if(name==='choice')   renderCheckboxList('choiceCourseList','choice-course-cb');
+  if(name==='quiz')     renderCheckboxList('quizCourseList','quiz-course-cb');
+  if(name==='match')    renderMatchCourseSelect();
+}
+
+document.querySelectorAll('.bnav-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>navTo(btn.dataset.panel));
+});
+
+// ══════════════════════════════════════════════════════
+//  COURSE MANAGEMENT
+// ══════════════════════════════════════════════════════
+function renderCourseList(){
+  const el=document.getElementById('courseList');
+  if(!db.courses.length){ el.innerHTML='<div class="empty"><div class="e-ico">📚</div><div>Henüz kurs yok.</div></div>'; refreshSelects(); return; }
+  el.innerHTML=db.courses.map(c=>`
+    <div class="course-row">
+      <div class="course-icon">📚</div>
+      <div class="course-meta">
+        <div class="course-name">${esc(c.name)}</div>
+        <div class="course-sub">${c.words.length} kelime</div>
+      </div>
+      <div class="course-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openWordModal('${c.id}')">👁</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCourse('${c.id}')">🗑</button>
+      </div>
+    </div>`).join('');
+  refreshSelects();
+}
+
+function refreshSelects(){
+  const opts='<option value="">-- Kurs seçin --</option>'+db.courses.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  document.getElementById('uploadTargetCourse').innerHTML=opts;
+  document.getElementById('manualTargetCourse').innerHTML=opts;
+  document.getElementById('matchCourseSelect').innerHTML=opts;
+}
+
+function renderCheckboxList(containerId, cbClass){
+  const el=document.getElementById(containerId);
+  if(!db.courses.length){ el.innerHTML='<div class="empty"><div>Kurs yok. Önce kurs oluşturun.</div></div>'; return; }
+  el.innerHTML=db.courses.map(c=>`
+    <label class="cb-item">
+      <input type="checkbox" class="${cbClass}" value="${c.id}" checked>
+      <span><b>${esc(c.name)}</b> <span style="color:var(--text3);font-size:12px;margin-left:6px;">${c.words.length} kelime</span></span>
+    </label>`).join('');
+}
+
+document.getElementById('createCourseBtn').addEventListener('click',()=>{
+  const name=document.getElementById('newCourseName').value.trim();
+  if(!name){ toast('Kurs adı girin!','error'); return; }
+  if(db.courses.find(c=>c.name===name)){ toast('Bu isimde kurs zaten var!','error'); return; }
+  db.courses.push({id:genId(),name,words:[]});
+  saveDB(); document.getElementById('newCourseName').value='';
+  renderCourseList(); toast('Kurs oluşturuldu!','success');
+});
+
+document.getElementById('addWordBtn').addEventListener('click',()=>{
+  const cid=document.getElementById('manualTargetCourse').value;
+  const en=document.getElementById('manualEN').value.trim();
+  const tr=document.getElementById('manualTR').value.trim();
+  if(!cid){ toast('Kurs seçin!','error'); return; }
+  if(!en||!tr){ toast('İki alanı da doldurun!','error'); return; }
+  db.courses.find(c=>c.id===cid).words.push({en,tr});
+  saveDB();
+  document.getElementById('manualEN').value='';
+  document.getElementById('manualTR').value='';
+  document.getElementById('manualEN').focus();
+  renderCourseList(); toast(`"${en}" eklendi!`,'success');
+});
+// Enter key on manual inputs
+document.getElementById('manualTR').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('addWordBtn').click(); });
+
+function deleteCourse(id){
+  // Android WebView uyumlu onay
+  if(!dialogConfirm('Bu kursu silmek istediğinizden emin misiniz?')) return;
+  db.courses=db.courses.filter(c=>c.id!==id);
+  saveDB(); renderCourseList(); toast('Kurs silindi.','info');
+}
+
+// Android WebView'da confirm() bazen sorun çıkarır, window.confirm kullan ama try-catch ile
+function dialogConfirm(msg){
+  try{ return window.confirm(msg); }catch(e){ return true; }
+}
+
+// ══════════════════════════════════════════════════════
+//  EXCEL UPLOAD
+// ══════════════════════════════════════════════════════
+let _excelRows=null, _excelCourseId=null;
+
+document.getElementById('excelFile').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const cid=document.getElementById('uploadTargetCourse').value;
+  if(!cid){ toast('Önce kurs seçin!','error'); e.target.value=''; return; }
+  _excelCourseId=cid;
+  showOverlay('Excel okunuyor...');
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const wb=XLSX.read(ev.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1});
+      if(!rows.length){ hideOverlay(); toast('Excel boş!','error'); return; }
+      const cols=rows[0].map((h,i)=>({idx:i,name:String(h||'Sütun '+(i+1))}));
+      _excelRows=rows; hideOverlay(); openColModal(cols);
+    }catch(err){ hideOverlay(); toast('Excel okunamadı: '+err.message,'error'); }
+  };
+  reader.readAsBinaryString(file);
+  e.target.value='';
+});
+
+function openColModal(cols){
+  const makeRadios=(name,col)=>cols.map(c=>`
+    <label class="cb-item" style="margin-bottom:4px;">
+      <input type="radio" name="${name}" value="${c.idx}" style="accent-color:var(--${col});">
+      ${esc(c.name)}
+    </label>`).join('');
+  document.getElementById('enColList').innerHTML=makeRadios('enCol','blue');
+  document.getElementById('trColList').innerHTML=makeRadios('trCol','purple');
+  document.getElementById('colModal').classList.add('open');
+}
+
+document.getElementById('cancelColModal').addEventListener('click',()=>document.getElementById('colModal').classList.remove('open'));
+document.getElementById('confirmColModal').addEventListener('click',()=>{
+  const enEl=document.querySelector('input[name="enCol"]:checked');
+  const trEl=document.querySelector('input[name="trCol"]:checked');
+  if(!enEl||!trEl){ toast('Her iki sütunu da seçin!','error'); return; }
+  const ei=parseInt(enEl.value), ti=parseInt(trEl.value);
+  if(ei===ti){ toast('Farklı sütunlar seçin!','error'); return; }
+  const c=db.courses.find(c=>c.id===_excelCourseId);
+  let added=0;
+  (_excelRows||[]).slice(1).forEach(row=>{
+    const en=String(row[ei]||'').trim(), tr=String(row[ti]||'').trim();
+    if(en&&tr){ c.words.push({en,tr}); added++; }
+  });
+  saveDB(); renderCourseList();
+  document.getElementById('colModal').classList.remove('open');
+  toast(`${added} kelime yüklendi!`,'success');
+});
+
+// ══════════════════════════════════════════════════════
+//  WORD MODAL
+// ══════════════════════════════════════════════════════
+let _wmCourseId=null;
+function openWordModal(id){
+  _wmCourseId=id;
+  const c=db.courses.find(c=>c.id===id);
+  document.getElementById('wordModalTitle').textContent=c.name;
+  renderWordList();
+  document.getElementById('wordModal').classList.add('open');
+}
+function renderWordList(){
+  const c=db.courses.find(c=>c.id===_wmCourseId);
+  document.getElementById('wordModalCount').textContent=c.words.length+' kelime';
+  document.getElementById('wordModalList').innerHTML=c.words.length
+    ?c.words.map((w,i)=>`
+      <div class="word-row">
+        <span class="word-en">${esc(w.en)}</span>
+        <span style="color:var(--text3);font-size:12px;">→</span>
+        <span class="word-tr">${esc(w.tr)}</span>
+        <button class="btn btn-danger btn-sm" onclick="deleteWord(${i})" style="padding:4px 8px;">✕</button>
+      </div>`).join('')
+    :'<div class="empty"><div>Kelime yok.</div></div>';
+}
+function deleteWord(i){
+  const c=db.courses.find(c=>c.id===_wmCourseId);
+  c.words.splice(i,1); saveDB(); renderWordList(); renderCourseList();
+}
+document.getElementById('closeWordModal').addEventListener('click',()=>document.getElementById('wordModal').classList.remove('open'));
+document.getElementById('wmAddBtn').addEventListener('click',()=>{
+  const en=document.getElementById('wmEN').value.trim(), tr=document.getElementById('wmTR').value.trim();
+  if(!en||!tr){ toast('Her iki alanı doldurun!','error'); return; }
+  db.courses.find(c=>c.id===_wmCourseId).words.push({en,tr});
+  saveDB(); document.getElementById('wmEN').value=''; document.getElementById('wmTR').value='';
+  document.getElementById('wmEN').focus();
+  renderWordList(); renderCourseList(); toast('Kelime eklendi!','success');
+});
+document.getElementById('wmTR').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('wmAddBtn').click(); });
+
+// ══════════════════════════════════════════════════════
+//  EXERCISE
+// ══════════════════════════════════════════════════════
+let exWords=[], exIdx=0, exAutoTimer=null;
+
+document.getElementById('startExBtn').addEventListener('click',()=>{
+  const ids=[...document.querySelectorAll('.ex-course-cb:checked')].map(c=>c.value);
+  if(!ids.length){ toast('En az bir kurs seçin!','error'); return; }
+  let words=getSelectedWords(ids);
+  if(!words.length){ toast('Kelime yok!','error'); return; }
+  const isRandom=document.getElementById('exOrderRandom').classList.contains('selected');
+  exWords=isRandom?shuffle(words):words;
+  exIdx=0;
+  document.getElementById('exSetup').style.display='none';
+  document.getElementById('exActive').style.display='block';
+  showExCard();
+});
+
+document.getElementById('stopExBtn').addEventListener('click',()=>{
+  clearInterval(exAutoTimer); exAutoTimer=null;
+  document.getElementById('exAutoPlay').checked=false;
+  document.getElementById('exActive').style.display='none';
+  document.getElementById('exSetup').style.display='block';
+});
+document.getElementById('exSpeakBtn').addEventListener('click',()=>{ if(exWords[exIdx]) speakWord(exWords[exIdx].en,'en-US'); });
+document.getElementById('exPrevBtn').addEventListener('click',()=>{ if(exIdx>0){exIdx--;showExCard();} });
+document.getElementById('exNextBtn').addEventListener('click',()=>{
+  if(exIdx<exWords.length-1){exIdx++;showExCard();}
+  else toast('Son kelimeye ulaştınız!','info');
+});
+document.getElementById('exAutoPlay').addEventListener('change',function(){ if(this.checked)startExAuto();else{clearInterval(exAutoTimer);exAutoTimer=null;} });
+document.getElementById('exAutoSpeed').addEventListener('change',()=>{ if(document.getElementById('exAutoPlay').checked){clearInterval(exAutoTimer);startExAuto();} });
+
+function startExAuto(){
+  const ms=parseInt(document.getElementById('exAutoSpeed').value);
+  // Speak current card first
+  speakWord(exWords[exIdx]?.en,'en-US');
+  exAutoTimer=setInterval(()=>{
+    if(exIdx<exWords.length-1){ exIdx++; showExCard(); speakWord(exWords[exIdx]?.en,'en-US'); }
+    else{ clearInterval(exAutoTimer); exAutoTimer=null; document.getElementById('exAutoPlay').checked=false; toast('Egzersiz tamamlandı!','success'); }
+  }, ms);
+}
+
+function showExCard(){
+  const w=exWords[exIdx]; if(!w) return;
+  document.getElementById('exEnWord').textContent=w.en;
+  document.getElementById('exTrWord').textContent=w.tr;
+  document.getElementById('exPhonetic').textContent=makePhonetic(w.en);
+  document.getElementById('exCounter').textContent=`${exIdx+1} / ${exWords.length}`;
+  document.getElementById('exProgress').textContent=`${exIdx+1}/${exWords.length}`;
+  document.getElementById('exProgressFill').style.width=`${((exIdx+1)/exWords.length)*100}%`;
+  document.getElementById('exPrevBtn').disabled=exIdx===0;
+  document.getElementById('exNextBtn').disabled=exIdx===exWords.length-1;
+  // Don't auto-speak here (only on user action or auto-play timer)
+}
+
+// ══════════════════════════════════════════════════════
+//  ÇOKTAN SEÇMELİ
+// ══════════════════════════════════════════════════════
+let _choiceWords=[], _choiceIdx=0, _choiceOk=0, _choiceNo=0, _choiceAnswered=false;
+let _choiceHistory=[], _choiceAllWords=[];
+
+document.getElementById('startChoiceBtn').addEventListener('click',()=>{
+  const ids=[...document.querySelectorAll('.choice-course-cb:checked')].map(c=>c.value);
+  if(!ids.length){ toast('En az bir kurs seçin!','error'); return; }
+  _choiceAllWords=getSelectedWords(ids);
+  if(_choiceAllWords.length<4){ toast('Test için en az 4 kelime gerekli!','error'); return; }
+  const countChip=document.querySelector('.chip.selected[data-group="choiceCount"]');
+  const count=countChip?parseInt(countChip.dataset.count):10;
+  let words=shuffle(_choiceAllWords);
+  _choiceWords=count>0?words.slice(0,count):words;
+  _choiceIdx=0; _choiceOk=0; _choiceNo=0; _choiceHistory=[];
+  document.getElementById('choiceSetup').style.display='none';
+  document.getElementById('choiceActive').style.display='block';
+  document.getElementById('choiceResults').style.display='none';
+  updateChoiceStats(); showChoiceQ();
+});
+
+function getChoiceMode(){ return document.getElementById('choiceModeEN').classList.contains('selected'); }
+
+function showChoiceQ(){
+  if(_choiceIdx>=_choiceWords.length){ showChoiceResults(); return; }
+  _choiceAnswered=false;
+  const w=_choiceWords[_choiceIdx];
+  const isEN=getChoiceMode();
+  const pct=((_choiceIdx+1)/_choiceWords.length)*100;
+  document.getElementById('choiceProgress').textContent=`${_choiceIdx+1}/${_choiceWords.length}`;
+  document.getElementById('choiceProgressFill').style.width=pct+'%';
+  document.getElementById('choiceQLabel').textContent=isEN?'İNGİLİZCE':'TÜRKÇE';
+  document.getElementById('choiceQWord').textContent=isEN?w.en:w.tr;
+  document.getElementById('choiceSpeakBtn').style.display=isEN?'inline':'none';
+  document.getElementById('choiceResultBadge').className='result-badge';
+  document.getElementById('choiceResultBadge').textContent='';
+  document.getElementById('choiceAnswerReveal').className='answer-reveal';
+  document.getElementById('choiceAnswerReveal').textContent='';
+  document.getElementById('choiceNextBtn').style.display='none';
+  document.getElementById('choiceSkipBtn').style.display='inline-flex';
+  // Build options
+  const correct=isEN?w.tr:w.en;
+  const distractors=shuffle(_choiceAllWords.filter(x=>(isEN?x.tr:x.en)!==correct)).slice(0,4).map(x=>isEN?x.tr:x.en);
+  const opts=shuffle([correct,...distractors.slice(0,3)]);
+  document.getElementById('choiceOptions').innerHTML=opts.map(o=>`<button class="choice-opt" data-val="${esc(o)}">${esc(o)}</button>`).join('');
+  document.querySelectorAll('.choice-opt').forEach(b=>b.addEventListener('click',()=>checkChoice(b,correct)));
+  if(isEN) speakWord(w.en,'en-US');
+}
+
+document.getElementById('choiceSpeakBtn').addEventListener('click',()=>{ if(_choiceWords[_choiceIdx]) speakWord(_choiceWords[_choiceIdx].en,'en-US'); });
+
+function checkChoice(btn, correct){
+  if(_choiceAnswered) return;
+  _choiceAnswered=true;
+  const chosen=btn.dataset.val;
+  const ok=normalize(chosen)===normalize(correct);
+  document.querySelectorAll('.choice-opt').forEach(b=>{
+    b.disabled=true;
+    if(normalize(b.dataset.val)===normalize(correct)) b.classList.add('correct');
+    else if(b===btn&&!ok) b.classList.add('wrong');
+  });
+  if(ok){ _choiceOk++; setBadge('choiceResultBadge','ok','✓ Doğru!'); }
+  else{
+    _choiceNo++;
+    setBadge('choiceResultBadge','no','✗ Yanlış');
+    const ar=document.getElementById('choiceAnswerReveal');
+    ar.textContent='Doğru: '+correct; ar.classList.add('show');
+  }
+  _choiceHistory.push({word:_choiceWords[_choiceIdx],ok,chosen});
+  updateChoiceStats();
+  document.getElementById('choiceNextBtn').style.display='inline-flex';
+  document.getElementById('choiceSkipBtn').style.display='none';
+}
+
+function setBadge(id, cls, txt){ const b=document.getElementById(id); b.textContent=txt; b.className=`result-badge ${cls} show`; }
+
+document.getElementById('choiceNextBtn').addEventListener('click',()=>{ _choiceIdx++; showChoiceQ(); });
+document.getElementById('choiceSkipBtn').addEventListener('click',()=>{
+  _choiceNo++;
+  _choiceHistory.push({word:_choiceWords[_choiceIdx],ok:false,chosen:'(atlandı)'});
+  updateChoiceStats(); _choiceIdx++; showChoiceQ();
+});
+document.getElementById('stopChoiceBtn').addEventListener('click',()=>{
+  document.getElementById('choiceActive').style.display='none';
+  document.getElementById('choiceSetup').style.display='block';
+});
+
+function updateChoiceStats(){
+  const total=_choiceOk+_choiceNo;
+  document.getElementById('choiceStatOk').textContent=_choiceOk;
+  document.getElementById('choiceStatNo').textContent=_choiceNo;
+  document.getElementById('choiceStatPct').textContent=total?Math.round((_choiceOk/total)*100)+'%':'—';
+}
+
+function showChoiceResults(){
+  document.getElementById('choiceActive').style.display='none';
+  document.getElementById('choiceResults').style.display='block';
+  const total=_choiceOk+_choiceNo, pct=total?Math.round((_choiceOk/total)*100):0;
+  document.getElementById('choiceFinalOk').textContent=_choiceOk;
+  document.getElementById('choiceFinalNo').textContent=_choiceNo;
+  document.getElementById('choiceFinalPct').textContent=pct+'%';
+  document.getElementById('choiceResultEmoji').textContent=pct>=80?'🏆':pct>=60?'🎉':pct>=40?'😊':'💪';
+  document.getElementById('choiceResultSub').textContent=`${total} sorudan ${_choiceOk} doğru — %${pct} başarı`;
+  document.getElementById('choiceResultsList').innerHTML=_choiceHistory.map(h=>`
+    <div class="ritem ${h.ok?'ok':'no'}">
+      <span>${esc(h.word.en)} → ${esc(h.word.tr)}</span>
+      <span>${h.ok?'✓':'✗ '+esc(h.chosen)}</span>
+    </div>`).join('');
+  // show/hide retry-wrong btn
+  const hasWrong=_choiceHistory.some(h=>!h.ok);
+  document.getElementById('choiceRetryWrong').style.display=hasWrong?'inline-flex':'none';
+}
+
+document.getElementById('choiceRetryBtn').addEventListener('click',()=>{
+  document.getElementById('choiceResults').style.display='none';
+  document.getElementById('choiceSetup').style.display='block';
+});
+document.getElementById('choiceRetryWrong').addEventListener('click',()=>{
+  // Retry only wrong words
+  const wrongWords=_choiceHistory.filter(h=>!h.ok).map(h=>h.word);
+  _choiceAllWords=wrongWords;
+  _choiceWords=shuffle(wrongWords);
+  _choiceIdx=0; _choiceOk=0; _choiceNo=0; _choiceHistory=[];
+  document.getElementById('choiceResults').style.display='none';
+  document.getElementById('choiceActive').style.display='block';
+  updateChoiceStats(); showChoiceQ();
+  toast('Yanlış kelimelerle yeni test!','info');
+});
+
+// ══════════════════════════════════════════════════════
+//  EŞLEŞTİRME
+// ══════════════════════════════════════════════════════
+let _matchSize=6, _matchSelected=null, _matchPairs=0, _matchErrors=0, _matchSecs=0, _matchTotal=0, _matchTimer=null;
+
+function renderMatchCourseSelect(){
+  document.getElementById('matchCourseSelect').innerHTML=
+    '<option value="">-- Kurs seçin --</option>'+
+    db.courses.map(c=>`<option value="${c.id}">${esc(c.name)} (${c.words.length})</option>`).join('');
+}
+
+document.querySelectorAll('#matchSizeChips .chip').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#matchSizeChips .chip').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    _matchSize=parseInt(btn.dataset.size);
+  });
+});
+
+document.getElementById('startMatchBtn').addEventListener('click',()=>{
+  const cid=document.getElementById('matchCourseSelect').value;
+  if(!cid){ toast('Kurs seçin!','error'); return; }
+  const words=getCourseWords(cid);
+  if(words.length<_matchSize){ toast(`En az ${_matchSize} kelime gerekli (${words.length} mevcut)`,'error'); return; }
+  const picked=shuffle(words).slice(0,_matchSize);
+  _matchPairs=0; _matchErrors=0; _matchSecs=0; _matchSelected=null; _matchTotal=_matchSize;
+  document.getElementById('matchSetup').style.display='none';
+  document.getElementById('matchActive').style.display='block';
+  document.getElementById('matchResults').style.display='none';
+  updateMatchDisplay();
+  renderMatchGrid(picked);
+  clearInterval(_matchTimer);
+  _matchTimer=setInterval(()=>{ _matchSecs++; document.getElementById('matchTimer').textContent=formatTime(_matchSecs); },1000);
+});
+
+function renderMatchGrid(pairs){
+  const cards=[];
+  pairs.forEach((w,i)=>{ cards.push({id:i,type:'en',text:w.en}); cards.push({id:i,type:'tr',text:w.tr}); });
+  const shuffled=shuffle(cards);
+  const grid=document.getElementById('matchGrid');
+  grid.innerHTML=shuffled.map(c=>`
+    <div class="match-card ${c.type}-card" data-id="${c.id}" data-type="${c.type}">
+      ${esc(c.text)}
+    </div>`).join('');
+  grid.querySelectorAll('.match-card').forEach(card=>card.addEventListener('click',()=>handleMatch(card)));
+}
+
+function handleMatch(card){
+  if(card.classList.contains('matched')) return;
+  if(card===_matchSelected){ card.classList.remove('selected'); _matchSelected=null; return; }
+  if(!_matchSelected){ card.classList.add('selected'); _matchSelected=card; return; }
+  const a=_matchSelected, b=card;
+  a.classList.remove('selected'); _matchSelected=null;
+  if(a.dataset.id===b.dataset.id && a.dataset.type!==b.dataset.type){
+    a.classList.add('matched'); b.classList.add('matched');
+    _matchPairs++; updateMatchDisplay();
+    if(_matchPairs===_matchTotal) setTimeout(showMatchResults,600);
+  } else {
+    _matchErrors++; updateMatchDisplay();
+    a.classList.add('flash-wrong'); b.classList.add('flash-wrong');
+    setTimeout(()=>{ a.classList.remove('flash-wrong'); b.classList.remove('flash-wrong'); },550);
+  }
+}
+
+function updateMatchDisplay(){
+  document.getElementById('matchPairs').textContent=_matchPairs;
+  document.getElementById('matchErrors').textContent=_matchErrors;
+}
+
+document.getElementById('stopMatchBtn').addEventListener('click',()=>{
+  clearInterval(_matchTimer);
+  document.getElementById('matchActive').style.display='none';
+  document.getElementById('matchSetup').style.display='block';
+});
+
+function showMatchResults(){
+  clearInterval(_matchTimer);
+  document.getElementById('matchActive').style.display='none';
+  document.getElementById('matchResults').style.display='block';
+  document.getElementById('matchFinalPairs').textContent=_matchPairs;
+  document.getElementById('matchFinalErrors').textContent=_matchErrors;
+  document.getElementById('matchFinalTime').textContent=formatTime(_matchSecs);
+  document.getElementById('matchResultSub').textContent=`${_matchPairs} çift / ${formatTime(_matchSecs)} / ${_matchErrors} hata`;
+}
+
+document.getElementById('matchRetryBtn').addEventListener('click',()=>{
+  document.getElementById('matchResults').style.display='none';
+  document.getElementById('matchActive').style.display='none';
+  document.getElementById('matchSetup').style.display='block';
+});
+
+// ══════════════════════════════════════════════════════
+//  SESLI QUIZ
+// ══════════════════════════════════════════════════════
+let _qWords=[], _qIdx=0, _qOk=0, _qNo=0, _qAnswered=false, _qHistory=[];
+let _recognition=null;
+
+document.getElementById('quizSelAll').addEventListener('click',()=>document.querySelectorAll('.quiz-course-cb').forEach(c=>c.checked=true));
+document.getElementById('quizClearAll').addEventListener('click',()=>document.querySelectorAll('.quiz-course-cb').forEach(c=>c.checked=false));
+
+document.getElementById('startQuizBtn').addEventListener('click',()=>{
+  const ids=[...document.querySelectorAll('.quiz-course-cb:checked')].map(c=>c.value);
+  if(!ids.length){ toast('En az bir kurs seçin!','error'); return; }
+  let words=getSelectedWords(ids);
+  if(!words.length){ toast('Kelime yok!','error'); return; }
+  const isRandom=document.getElementById('qOrderRandom').classList.contains('selected');
+  _qWords=isRandom?shuffle(words):words;
+  _qIdx=0; _qOk=0; _qNo=0; _qHistory=[];
+  // answer mode
+  const voiceOnly=document.getElementById('qAnsVoice').classList.contains('selected');
+  document.getElementById('quizTextWrap').style.display=voiceOnly?'none':'flex';
+  document.getElementById('quizSetup').style.display='none';
+  document.getElementById('quizActive').style.display='block';
+  document.getElementById('quizResults').style.display='none';
+  updateQStats(); showQQuestion();
+});
+
+function getQMode(){ return document.getElementById('qModeEN').classList.contains('selected'); }
+
+function showQQuestion(){
+  if(_qIdx>=_qWords.length){ showQResults(); return; }
+  _qAnswered=false;
+  const w=_qWords[_qIdx];
+  const isEN=getQMode();
+  const pct=((_qIdx+1)/_qWords.length)*100;
+  document.getElementById('quizProgressTxt').textContent=`${_qIdx+1}/${_qWords.length}`;
+  document.getElementById('quizProgressFill').style.width=pct+'%';
+  document.getElementById('quizQLbl').textContent=isEN?'İNGİLİZCE':'TÜRKÇE';
+  document.getElementById('quizQWord').textContent=isEN?w.en:w.tr;
+  document.getElementById('quizSpeakBtn').style.display=isEN?'inline':'none';
+  document.getElementById('quizQLang').textContent=isEN?'Türkçesini söyleyin / yazın':'İngilizcesini söyleyin / yazın';
+  document.getElementById('quizResultBadge').className='result-badge';
+  document.getElementById('quizResultBadge').textContent='';
+  document.getElementById('quizAnswerReveal').className='answer-reveal';
+  document.getElementById('quizAnswerReveal').textContent='';
+  document.getElementById('quizNextBtn').style.display='none';
+  document.getElementById('quizSkipBtn').style.display='inline-flex';
+  document.getElementById('quizTextInput').value='';
+  document.getElementById('quizTranscript').textContent='';
+  if(isEN) speakWord(w.en,'en-US');
+}
+
+document.getElementById('quizSpeakBtn').addEventListener('click',()=>{ if(_qWords[_qIdx]) speakWord(_qWords[_qIdx].en,'en-US'); });
+document.getElementById('quizSubmitBtn').addEventListener('click',()=>{
+  const ans=document.getElementById('quizTextInput').value.trim();
+  if(!ans) return;
+  gradeQ(ans);
+});
+document.getElementById('quizTextInput').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('quizSubmitBtn').click(); });
+
+document.getElementById('quizToggleTxtBtn').addEventListener('click',function(){
+  const wrap=document.getElementById('quizTextWrap');
+  const inputRow=wrap.querySelector('.q-input-row');
+  const hidden=inputRow.style.display==='none';
+  inputRow.style.display=hidden?'flex':'none';
+  this.textContent=hidden?'⌨️ Yazılı cevabı kapat':'⌨️ Yazılı cevabı aç';
+});
+
+document.getElementById('quizNextBtn').addEventListener('click',()=>{ stopRecognition(); _qIdx++; showQQuestion(); });
+document.getElementById('quizSkipBtn').addEventListener('click',()=>{
+  stopRecognition(); _qNo++;
+  _qHistory.push({word:_qWords[_qIdx],ok:false,answer:'(atlandı)'});
+  updateQStats(); _qIdx++; showQQuestion();
+});
+document.getElementById('stopQuizBtn').addEventListener('click',()=>{
+  stopRecognition();
+  document.getElementById('quizActive').style.display='none';
+  document.getElementById('quizSetup').style.display='block';
+});
+
+document.getElementById('micBtn').addEventListener('click',()=>{ if(!_recognition) startRecognition(); else stopRecognition(); });
+
+function startRecognition(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ toast('Ses tanıma bu tarayıcıda desteklenmiyor.','error'); return; }
+  _recognition=new SR();
+  _recognition.lang=getQMode()?'tr-TR':'en-US';
+  _recognition.interimResults=true;
+  _recognition.continuous=false;
+  document.getElementById('micBtn').classList.add('listening');
+  document.getElementById('micHint').textContent='Dinleniyor...';
+  _recognition.onresult=e=>{
+    const t=[...e.results].map(r=>r[0].transcript).join('');
+    document.getElementById('quizTranscript').textContent=t;
+    if(e.results[e.results.length-1].isFinal) gradeQ(t);
+  };
+  _recognition.onerror=()=>stopRecognition();
+  _recognition.onend=()=>stopRecognition();
+  _recognition.start();
+}
+
+function stopRecognition(){
+  if(_recognition){ try{_recognition.stop();}catch{} _recognition=null; }
+  document.getElementById('micBtn').classList.remove('listening');
+  document.getElementById('micHint').textContent='sesli cevap ver';
+}
+
+function gradeQ(ans){
+  if(_qAnswered) return;
+  _qAnswered=true;
+  stopRecognition();
+  const w=_qWords[_qIdx];
+  const expected=getQMode()?w.tr:w.en;
+  const ok=normalize(ans)===normalize(expected);
+  if(ok){ _qOk++; setBadge('quizResultBadge','ok','✓ Doğru!'); }
+  else{
+    _qNo++; setBadge('quizResultBadge','no','✗ Yanlış');
+    const ar=document.getElementById('quizAnswerReveal');
+    ar.textContent='Doğru: '+expected; ar.classList.add('show');
+  }
+  _qHistory.push({word:w,ok,answer:ans});
+  updateQStats();
+  document.getElementById('quizNextBtn').style.display='inline-flex';
+  document.getElementById('quizSkipBtn').style.display='none';
+}
+
+function updateQStats(){
+  const total=_qOk+_qNo;
+  document.getElementById('quizStatOk').textContent=_qOk;
+  document.getElementById('quizStatNo').textContent=_qNo;
+  document.getElementById('quizStatPct').textContent=total?Math.round((_qOk/total)*100)+'%':'—';
+}
+
+function showQResults(){
+  document.getElementById('quizActive').style.display='none';
+  document.getElementById('quizResults').style.display='block';
+  const total=_qOk+_qNo, pct=total?Math.round((_qOk/total)*100):0;
+  document.getElementById('quizFinalOk').textContent=_qOk;
+  document.getElementById('quizFinalNo').textContent=_qNo;
+  document.getElementById('quizFinalPct').textContent=pct+'%';
+  document.getElementById('quizResultEmoji').textContent=pct>=80?'🏆':pct>=60?'🎉':pct>=40?'😊':'💪';
+  document.getElementById('quizResultSub').textContent=`${total} kelimeden ${_qOk} doğru — %${pct} başarı`;
+  document.getElementById('quizResultsList').innerHTML=_qHistory.map(h=>`
+    <div class="ritem ${h.ok?'ok':'no'}">
+      <span>${esc(h.word.en)} → ${esc(h.word.tr)}</span>
+      <span>${h.ok?'✓':'✗ '+esc(h.answer)}</span>
+    </div>`).join('');
+  const hasWrong=_qHistory.some(h=>!h.ok);
+  document.getElementById('quizRetryWrong').style.display=hasWrong?'inline-flex':'none';
+}
+
+document.getElementById('quizRetryBtn').addEventListener('click',()=>{
+  document.getElementById('quizResults').style.display='none';
+  document.getElementById('quizSetup').style.display='block';
+});
+document.getElementById('quizRetryWrong').addEventListener('click',()=>{
+  const wrongWords=_qHistory.filter(h=>!h.ok).map(h=>h.word);
+  _qWords=shuffle(wrongWords);
+  _qIdx=0; _qOk=0; _qNo=0; _qHistory=[];
+  // keep same answer mode
+  document.getElementById('quizResults').style.display='none';
+  document.getElementById('quizActive').style.display='block';
+  updateQStats(); showQQuestion();
+  toast('Yanlış kelimelerle quiz başladı!','info');
+});
+
+// ══════════════════════════════════════════════════════
+//  AYARLAR (JSON)
+// ══════════════════════════════════════════════════════
+document.getElementById('exportJsonBtn').addEventListener('click',()=>{
+  if(!db.courses.length){ toast('Yedeklenecek kurs yok!','error'); return; }
+  const json=JSON.stringify(db,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`wordflow_yedek_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  toast('JSON indirildi!','success');
+});
+
+document.getElementById('importJsonTrigger').addEventListener('click',()=>document.getElementById('importJsonFile').click());
+document.getElementById('importJsonFile').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!data.courses||!Array.isArray(data.courses)) throw new Error('Geçersiz format');
+      if(!dialogConfirm(`${data.courses.length} kurs içeriyor. Mevcut verilerin üzerine yazılsın mı?`)) return;
+      db=data; if(!db.bestScores) db.bestScores={};
+      saveDB(); renderCourseList(); toast(`${data.courses.length} kurs yüklendi!`,'success');
+    }catch(err){ toast('Geçersiz JSON: '+err.message,'error'); }
+  };
+  reader.readAsText(file); e.target.value='';
+});
+
+document.getElementById('deleteAllBtn').addEventListener('click',()=>{
+  if(!dialogConfirm('Tüm kurslar ve kelimeler silinecek. Emin misiniz?')) return;
+  db={courses:[],bestScores:{}}; saveDB(); renderCourseList(); toast('Tüm veriler silindi.','info');
+});
+
+// ══════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════
+initChipGroups();
+renderCourseList();
+// Pre-render exercise/choice/quiz lists for first open
+renderCheckboxList('exCourseList','ex-course-cb');
+renderCheckboxList('choiceCourseList','choice-course-cb');
+renderCheckboxList('quizCourseList','quiz-course-cb');
+renderMatchCourseSelect();
+</script>
+</body>
+</html>
