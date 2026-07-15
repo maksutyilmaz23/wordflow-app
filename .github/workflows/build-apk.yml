@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Kodu indir
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: JDK 17 kur
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -25,7 +25,7 @@ jobs:
         run: ./gradlew assembleDebug
 
       - name: APK dosyasını yükle (Artifacts sekmesinden inersin)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: app-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
